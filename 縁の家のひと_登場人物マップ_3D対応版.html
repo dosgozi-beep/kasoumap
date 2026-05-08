@@ -1,0 +1,855 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>縁の家のひと ― 登場人物マップ（3D対応版）</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
+<script type="module" src="https://ajax.googleapis.com/ajax/libs/model-viewer/4.0.0/model-viewer.min.js"></script>
+
+<style>
+:root {
+  --ink: #1a1a1a;
+  --ink-soft: #4a4a48;
+  --ink-faint: #8a8a85;
+  --paper: #faf8f3;
+  --paper-warm: #f3efe7;
+  --paper-deep: #ebe6d9;
+  --line: rgba(26, 26, 26, 0.12);
+  --enno: #b06848;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  background: var(--paper);
+  color: var(--ink);
+  font-family: -apple-system, "Hiragino Sans", "Yu Gothic", "Noto Sans JP", sans-serif;
+  line-height: 1.7;
+  font-size: 14px;
+  -webkit-font-smoothing: antialiased;
+  overflow-x: hidden;
+}
+.serif {
+  font-family: -apple-system, "Hiragino Mincho ProN", "Yu Mincho", "游明朝", "Noto Serif JP", serif;
+}
+
+header {
+  padding: 1.5rem 1.5rem 1.25rem;
+  border-bottom: 1px solid var(--line);
+  background: var(--paper);
+  position: relative;
+  z-index: 500;
+}
+.header-inner {
+  max-width: 1280px;
+  margin: 0 auto;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+.header-eyebrow {
+  font-size: 10px;
+  letter-spacing: 0.4em;
+  color: var(--ink-faint);
+  text-transform: uppercase;
+  margin-bottom: 0.5rem;
+}
+.header-title {
+  font-family: -apple-system, "Hiragino Mincho ProN", serif;
+  font-size: 24px;
+  font-weight: 400;
+  letter-spacing: 0.05em;
+  line-height: 1.4;
+}
+.header-sub {
+  font-size: 12px;
+  color: var(--ink-soft);
+  margin-top: 0.4rem;
+  letter-spacing: 0.05em;
+}
+.header-controls {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+.btn-tile {
+  font-family: inherit;
+  font-size: 11px;
+  letter-spacing: 0.1em;
+  background: var(--paper);
+  border: 1px solid var(--line);
+  color: var(--ink-soft);
+  padding: 0.5rem 0.9rem;
+  cursor: pointer;
+  border-radius: 2px;
+  transition: all 0.2s;
+}
+.btn-tile:hover { border-color: var(--ink-faint); color: var(--ink); }
+.btn-tile.active { background: var(--ink); color: var(--paper); border-color: var(--ink); }
+
+.layout {
+  display: grid;
+  grid-template-columns: 1fr 380px;
+  max-width: 1280px;
+  margin: 0 auto;
+  height: calc(100vh - 110px);
+  min-height: 600px;
+}
+.map-area { position: relative; background: var(--paper); }
+#map { width: 100%; height: 100%; background: var(--paper-warm); }
+
+.side-panel {
+  background: var(--paper-warm);
+  overflow-y: auto;
+  border-left: 1px solid var(--line);
+  display: flex;
+  flex-direction: column;
+}
+.panel-default { 
+  text-align: center; 
+  padding: 4rem 1.5rem;
+  color: var(--ink-soft);
+}
+.panel-default-icon {
+  font-family: serif;
+  font-size: 36px;
+  color: var(--ink-faint);
+  margin-bottom: 1rem;
+}
+.panel-default-text {
+  font-size: 12px;
+  letter-spacing: 0.05em;
+  line-height: 2;
+}
+
+/* 3Dビューア領域 */
+.figure-3d-area {
+  background: linear-gradient(180deg, #f3efe7 0%, #ebe6d9 100%);
+  height: 320px;
+  position: relative;
+  border-bottom: 1px solid var(--line);
+  overflow: hidden;
+}
+.figure-3d-area model-viewer {
+  width: 100%;
+  height: 100%;
+  --poster-color: transparent;
+  --progress-bar-color: var(--enno);
+  --progress-bar-height: 1px;
+  background: transparent;
+}
+.figure-placeholder {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 1.5rem;
+}
+.figure-placeholder-mark {
+  font-family: -apple-system, "Hiragino Mincho ProN", serif;
+  font-size: 60px;
+  color: var(--ink-faint);
+  opacity: 0.4;
+  margin-bottom: 0.75rem;
+  line-height: 1;
+}
+.figure-placeholder-text {
+  font-family: -apple-system, "Hiragino Mincho ProN", serif;
+  font-size: 12px;
+  color: var(--ink-faint);
+  letter-spacing: 0.1em;
+  line-height: 1.8;
+}
+.figure-3d-badge {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  background: rgba(176, 104, 72, 0.9);
+  color: #fff;
+  padding: 4px 10px;
+  font-size: 9px;
+  letter-spacing: 0.25em;
+  border-radius: 2px;
+  text-transform: uppercase;
+  z-index: 5;
+}
+
+.detail-content {
+  padding: 1.5rem 1.5rem 2rem;
+  flex: 1;
+}
+
+.character-detail .age {
+  font-family: -apple-system, "Hiragino Mincho ProN", serif;
+  font-size: 48px;
+  line-height: 1;
+  color: var(--ink);
+  margin-bottom: 0.4rem;
+  letter-spacing: 0.02em;
+}
+.character-detail .name {
+  font-family: -apple-system, "Hiragino Mincho ProN", serif;
+  font-size: 20px;
+  letter-spacing: 0.08em;
+  margin-bottom: 0.25rem;
+  color: var(--ink);
+}
+.character-detail .reading {
+  font-size: 11px;
+  color: var(--ink-faint);
+  letter-spacing: 0.15em;
+  margin-bottom: 1rem;
+}
+.character-detail .role-tag {
+  display: inline-block;
+  background: var(--paper);
+  padding: 4px 10px;
+  font-size: 10px;
+  letter-spacing: 0.1em;
+  color: var(--ink-soft);
+  border-radius: 2px;
+  margin-bottom: 1.25rem;
+}
+.detail-section {
+  border-top: 1px solid var(--line);
+  padding-top: 1.1rem;
+  margin-top: 1.1rem;
+}
+.detail-label {
+  font-size: 10px;
+  letter-spacing: 0.3em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+  margin-bottom: 0.6rem;
+}
+.detail-text {
+  font-family: -apple-system, "Hiragino Mincho ProN", serif;
+  font-size: 13px;
+  line-height: 1.95;
+  color: var(--ink);
+  letter-spacing: 0.04em;
+}
+.detail-list { list-style: none; padding: 0; }
+.detail-list li {
+  font-size: 12px;
+  padding: 0.4rem 0;
+  border-bottom: 1px dashed var(--line);
+  display: flex;
+  justify-content: space-between;
+  gap: 0.5rem;
+  color: var(--ink-soft);
+}
+.detail-list li:last-child { border-bottom: none; }
+.detail-list .relation-name {
+  font-family: -apple-system, "Hiragino Mincho ProN", serif;
+  color: var(--ink);
+  letter-spacing: 0.05em;
+}
+.detail-list .relation-type {
+  font-size: 10px;
+  color: var(--ink-faint);
+  letter-spacing: 0.1em;
+}
+.close-btn {
+  background: transparent;
+  border: 1px solid var(--line);
+  color: var(--ink-soft);
+  padding: 0.5rem 1rem;
+  font-family: inherit;
+  font-size: 11px;
+  letter-spacing: 0.15em;
+  cursor: pointer;
+  border-radius: 2px;
+  margin-top: 1.5rem;
+  width: 100%;
+}
+.close-btn:hover { background: var(--paper); border-color: var(--ink-faint); }
+
+.legend {
+  position: absolute;
+  bottom: 16px;
+  left: 16px;
+  background: rgba(250, 248, 243, 0.95);
+  border: 1px solid var(--line);
+  padding: 0.75rem 1rem;
+  font-size: 10px;
+  letter-spacing: 0.05em;
+  border-radius: 2px;
+  z-index: 400;
+  max-width: 200px;
+}
+.legend-title {
+  font-size: 9px;
+  letter-spacing: 0.3em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+  margin-bottom: 0.5rem;
+}
+.legend-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 4px;
+}
+.legend-row:last-child { margin-bottom: 0; }
+.legend-dot {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  border: 1.5px solid #fff;
+  box-shadow: 0 0 0 1px var(--line);
+  flex-shrink: 0;
+}
+
+.char-marker { background: transparent !important; border: none !important; }
+.char-marker-inner {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  border: 2.5px solid #fff;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.25);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: -apple-system, "Hiragino Mincho ProN", serif;
+  color: #fff;
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0;
+  cursor: pointer;
+  transition: transform 0.15s;
+  position: relative;
+}
+.char-marker:hover .char-marker-inner { transform: scale(1.18); }
+.char-marker.selected .char-marker-inner {
+  box-shadow: 0 0 0 3px var(--ink), 0 2px 6px rgba(0,0,0,0.25);
+}
+.char-marker-inner.small {
+  width: 22px;
+  height: 22px;
+  font-size: 11px;
+  border-width: 2px;
+}
+/* 3Dフィギュアありのキャラには、特別なマーカーリング */
+.char-marker-inner.has-3d::after {
+  content: "";
+  position: absolute;
+  inset: -5px;
+  border-radius: 50%;
+  border: 1.5px solid var(--enno);
+  opacity: 0.7;
+  animation: ripple 2.5s ease-out infinite;
+}
+@keyframes ripple {
+  0% { transform: scale(1); opacity: 0.7; }
+  100% { transform: scale(1.5); opacity: 0; }
+}
+
+.char-marker-label {
+  position: absolute;
+  top: -22px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(250,248,243,0.92);
+  padding: 1px 6px;
+  font-family: -apple-system, "Hiragino Mincho ProN", serif;
+  font-size: 11px;
+  letter-spacing: 0.05em;
+  color: var(--ink);
+  white-space: nowrap;
+  border-radius: 2px;
+  border: 1px solid var(--line);
+  pointer-events: none;
+}
+
+.leaflet-popup-content-wrapper {
+  background: var(--paper);
+  border-radius: 2px;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.15);
+}
+.leaflet-popup-content {
+  margin: 0.75rem 1rem;
+  font-family: -apple-system, "Hiragino Mincho ProN", serif;
+  font-size: 12px;
+  line-height: 1.7;
+  letter-spacing: 0.05em;
+}
+.leaflet-popup-tip { background: var(--paper); }
+.popup-name { font-size: 13px; font-weight: 500; margin-bottom: 0.2rem; }
+.popup-role {
+  font-family: -apple-system, "Hiragino Sans", sans-serif;
+  font-size: 10px;
+  color: var(--ink-faint);
+  letter-spacing: 0.1em;
+}
+
+.leaflet-tile-pane { filter: contrast(0.95) saturate(0.8) brightness(1.02); }
+
+/* セットアップ案内 */
+.setup-warning {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  background: rgba(250, 248, 243, 0.95);
+  border: 1px solid var(--enno);
+  padding: 0.75rem 1rem;
+  font-size: 11px;
+  letter-spacing: 0.05em;
+  border-radius: 2px;
+  color: var(--ink);
+  z-index: 401;
+  max-width: 240px;
+  line-height: 1.7;
+  display: none;
+}
+.setup-warning.show { display: block; }
+.setup-warning-title {
+  font-size: 10px;
+  letter-spacing: 0.2em;
+  color: var(--enno);
+  margin-bottom: 0.4rem;
+  font-weight: 500;
+}
+.setup-warning-close {
+  position: absolute;
+  top: 4px;
+  right: 6px;
+  background: transparent;
+  border: none;
+  color: var(--ink-faint);
+  cursor: pointer;
+  font-size: 16px;
+  line-height: 1;
+  padding: 4px;
+}
+
+@media (max-width: 880px) {
+  .layout { grid-template-columns: 1fr; height: auto; }
+  .map-area { height: 60vh; min-height: 400px; }
+  .side-panel { border-left: none; border-top: 1px solid var(--line); height: auto; }
+  .header-inner { flex-direction: column; align-items: flex-start; }
+  .figure-3d-area { height: 280px; }
+}
+</style>
+</head>
+<body>
+
+<header>
+<div class="header-inner">
+<div>
+<p class="header-eyebrow">Real Map · Characters · 3D</p>
+<h1 class="header-title serif">縁の家のひと ― 登場人物マップ</h1>
+<p class="header-sub">前橋・桐生・富士見の実地図上で　／　二〇二六年五月</p>
+</div>
+<div class="header-controls">
+<button class="btn-tile active" id="tile-light" onclick="setTile('light')">標準地図</button>
+<button class="btn-tile" id="tile-mute" onclick="setTile('mute')">グレースケール</button>
+<button class="btn-tile" id="reset-view" onclick="resetView()">表示リセット</button>
+</div>
+</div>
+</header>
+
+<div class="layout">
+
+<div class="map-area">
+<div id="map"></div>
+<div class="legend">
+<div class="legend-title">凡例</div>
+<div class="legend-row"><div class="legend-dot" style="background:#b06848"></div>縁の家</div>
+<div class="legend-row"><div class="legend-dot" style="background:#6b8e7f"></div>桐生（中嶋家）</div>
+<div class="legend-row"><div class="legend-dot" style="background:#b8a070"></div>富士見（千代さん）</div>
+<div class="legend-row"><div class="legend-dot" style="background:#7a8a9a"></div>吉田（製造業）</div>
+<div class="legend-row"><div class="legend-dot" style="background:#8c7090"></div>泊まれる本屋</div>
+<div class="legend-row"><div class="legend-dot" style="background:#c89060"></div>篠原家</div>
+<div class="legend-row"><div class="legend-dot" style="background:#999090"></div>群馬大学（学生）</div>
+<div class="legend-row" style="margin-top:6px; padding-top:6px; border-top:1px dashed var(--line);">
+<div class="legend-dot" style="background:#fff; border:1.5px solid var(--enno);"></div>
+<span style="color:var(--enno);">3Dフィギュアあり</span>
+</div>
+</div>
+<div class="setup-warning" id="setup-warning">
+<button class="setup-warning-close" onclick="document.getElementById('setup-warning').classList.remove('show')">×</button>
+<div class="setup-warning-title">SETUP</div>
+3Dフィギュアを表示するには、<br>
+このHTMLと <strong>篠原_圭.glb</strong> を<br>
+同じフォルダに置いてから、<br>
+普通のブラウザで開いてください。
+</div>
+</div>
+
+<aside class="side-panel" id="panel">
+<div class="panel-default">
+<p class="panel-default-icon serif">縁</p>
+<p class="panel-default-text">地図上の人物アイコンをクリックしてください。<br><br>朱色のリングがついた人は、<br>3Dフィギュアが表示されます。</p>
+</div>
+</aside>
+
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+<script>
+const characters = {
+  kei: {
+    age: 38, name: '篠原 圭', reading: 'Shinohara Kei',
+    role: '主人公・縁の家運営者',
+    place: '縁の家（前橋・千代田町）',
+    coord: [36.3895, 139.0670],
+    color: '#b06848',
+    initial: '圭',
+    has3D: true,
+    glbFile: '篠原_圭.glb',
+    summary: '愛媛県松山市出身。広告代理店を辞めて家族で前橋に移住。空き家をリノベして縁の家を運営。法人を立ち上げたが顧客はゼロ。Iターン者として「中心にならない」覚悟をひそかに持っている。',
+    relations: [
+      { name: '美咲', type: '妻' }, { name: '大翔・颯太', type: '息子' },
+      { name: '拓海', type: '管理人' }, { name: '結衣・美月', type: 'インターン' },
+      { name: '英治', type: '協力者' }, { name: '川村', type: '協力者' },
+      { name: '吉田 雅人', type: '初顧客' }
+    ]
+  },
+  misaki: {
+    age: 36, name: '美咲', reading: 'Misaki',
+    role: '篠原圭の妻・ブロガー',
+    place: '篠原家（前橋・自宅）',
+    coord: [36.3838, 139.0588],
+    color: '#c89060',
+    initial: '美',
+    summary: '元出版社の編集者。育児と暮らし、群馬の景色を綴るブロガー。物語の中で「書く人」へと変わっていく。第二の主人公。',
+    relations: [{ name: '圭', type: '夫' }, { name: '大翔・颯太', type: '息子' }]
+  },
+  hiroto: {
+    age: 7, name: '大翔', reading: 'Hiroto',
+    role: '篠原家の長男（小学1年）',
+    place: '篠原家',
+    coord: [36.3835, 139.0594],
+    color: '#c89060',
+    initial: '大',
+    small: true,
+    summary: '小学校1年生。物語の終盤、12歳で「縁の家、もう来ないかも。だって、もう、子どもじゃないから」と言うことになる。',
+    relations: [{ name: '颯太', type: '弟' }, { name: '圭', type: '父' }, { name: '美咲', type: '母' }]
+  },
+  souta: {
+    age: 5, name: '颯太', reading: 'Souta',
+    role: '篠原家の次男（年中）',
+    place: '篠原家',
+    coord: [36.3832, 139.0586],
+    color: '#c89060',
+    initial: '颯',
+    small: true,
+    summary: '幼稚園年中組。「ぱぱのおうちは、おばあちゃんのおうちみたいだね」と言って、運営思想に名前を与える子。',
+    relations: [{ name: '大翔', type: '兄' }, { name: '圭', type: '父' }, { name: '美咲', type: '母' }]
+  },
+  takumi: {
+    age: 26, name: '篠崎 拓海', reading: 'Shinozaki Takumi',
+    role: '管理人・フリーランスのプログラマー',
+    place: '縁の家（住み込み）',
+    coord: [36.3892, 139.0668],
+    color: '#7a8a9a',
+    initial: '拓',
+    summary: '週3日、午前中だけ縁の家を開ける管理人。フリーランスのエンジニア。物語の中で独立し、AIと共に作中小説『二〇五六年、縁の家まで』を書きはじめる。',
+    relations: [{ name: '圭', type: '雇い主／鏡像' }, { name: 'AI', type: '共作者（後）' }]
+  },
+  yui: {
+    age: 19, name: '結衣', reading: 'Yui',
+    role: 'インターン・群馬大学2年',
+    place: '群馬大学（荒牧キャンパス）',
+    coord: [36.4172, 139.0418],
+    color: '#999090',
+    initial: '結',
+    small: true,
+    summary: '丁寧に作りたいタイプのインターン。ポッドキャスト『前橋ばなし』の編集を担当。卒業後は篠原の法人の正社員になる。',
+    relations: [{ name: '美月', type: '同期' }, { name: '圭', type: 'インターン先' }]
+  },
+  mizuki: {
+    age: 19, name: '美月', reading: 'Mizuki',
+    role: 'インターン・群馬大学2年',
+    place: '群馬大学（荒牧キャンパス）',
+    coord: [36.4178, 139.0415],
+    color: '#999090',
+    initial: '月',
+    small: true,
+    summary: '速く出したいタイプのインターン。第3章で結衣と方向性が衝突し、3週間連絡を絶つ事件の主役になる。',
+    relations: [{ name: '結衣', type: '同期' }, { name: '圭', type: 'インターン先' }]
+  },
+  eiji: {
+    age: 72, name: '中嶋 英治', reading: 'Nakajima Eiji',
+    role: '元建築業界・桐生で「祈りの空間」を運営',
+    place: '桐生市山田町（祈りの空間）',
+    coord: [36.4205, 139.3380],
+    color: '#6b8e7f',
+    initial: '英',
+    summary: '東京の建築業界を退いて群馬に戻ってきた人。桐生の空き家を一人でDIYしながら、まちに開かれた祈りの空間を作っている。「完成しないんですよ。完成したと思った瞬間に、誰も来なくなる気がして」。',
+    relations: [{ name: 'ハル', type: '母' }, { name: '圭', type: '協力者' }]
+  },
+  haru: {
+    age: 108, name: '中嶋 ハル', reading: 'Nakajima Haru',
+    role: '英治の母・SNSで発信を続ける最年長',
+    place: '桐生（山中の家）',
+    coord: [36.4280, 139.3450],
+    color: '#6b8e7f',
+    initial: 'ハ',
+    summary: 'タブレットを膝に乗せて、毎週SNSで発信している。今日の柱の塗装、障子を張り替えた孫。世界中にフォロワーがいる。物語の中で、ついに桐生から前橋・縁の家へ訪れる。',
+    relations: [{ name: '英治', type: '息子' }, { name: '千代', type: '出会う人' }]
+  },
+  yumiko: {
+    age: 63, name: '川村 由美子', reading: 'Kawamura Yumiko',
+    role: '泊まれる本屋・民泊オーナー',
+    place: '前橋市街地（弁天通／中央前橋駅近く）',
+    coord: [36.3915, 139.0712],
+    color: '#8c7090',
+    initial: '由',
+    summary: '空き家を改装して、泊まれる本屋と民泊を営む。スロートリップで来る若い人たちの拠点。読書スペースは宿泊者でなくても立ち寄れる。',
+    relations: [{ name: '圭', type: '協力者' }]
+  },
+  masato: {
+    age: 52, name: '吉田 雅人', reading: 'Yoshida Masato',
+    role: '町工場の二代目・最初のクライアント',
+    place: '前橋市内（製造業地区）',
+    coord: [36.3722, 139.0855],
+    color: '#7a8a9a',
+    initial: '雅',
+    summary: '父から継いだ精密部品工場の2代目。母の免許返納後の生活困難から、「俺の母みたいな人のための、何か」を工場で作れないかと相談に来る。篠原の法人の最初の顧客。',
+    relations: [{ name: '千代', type: '母' }, { name: '圭', type: '依頼相手' }]
+  },
+  chiyo: {
+    age: 84, name: '吉田 千代', reading: 'Yoshida Chiyo',
+    role: '雅人の母・富士見でひとり暮らし',
+    place: '前橋市富士見町',
+    coord: [36.4845, 139.0822],
+    color: '#b8a070',
+    initial: '千',
+    summary: '免許返納後、富士見の自宅で生活する。歩ける距離にスーパーはなく、病院はタクシーで往復5千円。表情が、目に見えて減ってきている。物語の中で、認知症の進行を経て、ハルさんの言葉に支えられる。',
+    relations: [{ name: '雅人', type: '息子' }, { name: 'ハル', type: '出会う人' }]
+  }
+};
+
+const relations = [
+  { from: 'kei', to: 'misaki', type: '夫婦' },
+  { from: 'misaki', to: 'hiroto', type: '親子' },
+  { from: 'misaki', to: 'souta', type: '親子' },
+  { from: 'kei', to: 'hiroto', type: '親子' },
+  { from: 'kei', to: 'souta', type: '親子' },
+  { from: 'kei', to: 'takumi', type: '協働' },
+  { from: 'kei', to: 'yui', type: '協働' },
+  { from: 'kei', to: 'mizuki', type: '協働' },
+  { from: 'yui', to: 'mizuki', type: '同期' },
+  { from: 'kei', to: 'eiji', type: '協力' },
+  { from: 'kei', to: 'yumiko', type: '協力' },
+  { from: 'eiji', to: 'haru', type: '親子' },
+  { from: 'kei', to: 'masato', type: '顧客' },
+  { from: 'masato', to: 'chiyo', type: '親子' },
+  { from: 'haru', to: 'chiyo', type: '出会い・特別な縁', special: true }
+];
+
+const map = L.map('map', {
+  center: [36.405, 139.180],
+  zoom: 11,
+  minZoom: 10,
+  maxZoom: 17,
+  zoomControl: true,
+  attributionControl: true
+});
+
+const tiles = {
+  light: L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+    maxZoom: 19,
+    subdomains: ['a', 'b', 'c']
+  }),
+  mute: L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
+    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/attributions">CARTO</a>',
+    maxZoom: 19,
+    subdomains: 'abcd'
+  })
+};
+let currentTile = tiles.light.addTo(map);
+
+function setTile(name) {
+  if (currentTile) map.removeLayer(currentTile);
+  currentTile = tiles[name].addTo(map);
+  document.querySelectorAll('.btn-tile[id^="tile-"]').forEach(b => b.classList.remove('active'));
+  document.getElementById('tile-' + name).classList.add('active');
+}
+
+function resetView() {
+  map.setView([36.405, 139.180], 11);
+  clearSelection();
+}
+
+const markers = {};
+function makeMarker(id, c) {
+  const isSmall = c.small ? 'small' : '';
+  const has3D = c.has3D ? 'has-3d' : '';
+  const html = `
+    <div class="char-marker-inner ${isSmall} ${has3D}" style="background:${c.color}">${c.initial}</div>
+    <div class="char-marker-label">${c.name}</div>
+  `;
+  const icon = L.divIcon({
+    html: html,
+    className: 'char-marker',
+    iconSize: [28, 28],
+    iconAnchor: [14, 14]
+  });
+  const marker = L.marker(c.coord, { icon: icon }).addTo(map);
+  marker.bindPopup(`
+    <div class="popup-name">${c.name}（${c.age}）${c.has3D ? ' · 3D' : ''}</div>
+    <div class="popup-role">${c.role}</div>
+  `, { offset: [0, -10], closeButton: false });
+  marker.on('click', () => selectChar(id));
+  return marker;
+}
+
+Object.keys(characters).forEach(id => {
+  markers[id] = makeMarker(id, characters[id]);
+});
+
+const relationLines = [];
+relations.forEach(r => {
+  const a = characters[r.from].coord;
+  const b = characters[r.to].coord;
+  const isSpecial = r.special;
+  const line = L.polyline([a, b], {
+    color: isSpecial ? '#b06848' : '#666',
+    weight: isSpecial ? 1.8 : 1.0,
+    opacity: 0.35,
+    dashArray: '4 6',
+    interactive: false
+  }).addTo(map);
+  line.relData = r;
+  relationLines.push(line);
+});
+
+let selectedId = null;
+
+function selectChar(id) {
+  selectedId = id;
+  Object.keys(markers).forEach(k => {
+    const el = markers[k].getElement();
+    if (el) el.classList.remove('selected');
+  });
+  const target = markers[id].getElement();
+  if (target) target.classList.add('selected');
+  relationLines.forEach(line => {
+    if (line.relData.from === id || line.relData.to === id) {
+      line.setStyle({
+        color: line.relData.special ? '#b06848' : '#1a1a1a',
+        opacity: 0.75,
+        weight: line.relData.special ? 2.4 : 1.6,
+        dashArray: null
+      });
+      line.bringToFront();
+    } else {
+      line.setStyle({
+        color: '#666',
+        opacity: 0.18,
+        weight: 1.0,
+        dashArray: '4 6'
+      });
+    }
+  });
+  renderPanel(id);
+  const c = characters[id];
+  if (c.coord) {
+    map.setView(c.coord, Math.max(map.getZoom(), 12), { animate: true, duration: 0.5 });
+  }
+}
+
+function renderPanel(id) {
+  const c = characters[id];
+  if (!c) return;
+  const panel = document.getElementById('panel');
+  const relList = c.relations.map(r =>
+    `<li><span class="relation-name">${r.name}</span><span class="relation-type">${r.type}</span></li>`
+  ).join('');
+
+  // 3Dフィギュアありの場合
+  let figureSection = '';
+  if (c.has3D && c.glbFile) {
+    figureSection = `
+      <div class="figure-3d-area">
+        <span class="figure-3d-badge">3D Figure</span>
+        <model-viewer
+          src="${c.glbFile}"
+          alt="${c.name}の3Dフィギュア"
+          camera-controls
+          auto-rotate
+          auto-rotate-delay="2000"
+          rotation-per-second="20deg"
+          shadow-intensity="0.5"
+          exposure="1.1"
+          environment-image="neutral"
+          loading="eager">
+        </model-viewer>
+      </div>
+    `;
+    // 案内を表示
+    document.getElementById('setup-warning').classList.add('show');
+  } else {
+    figureSection = `
+      <div class="figure-3d-area">
+        <div class="figure-placeholder">
+          <div class="figure-placeholder-mark serif">${c.initial}</div>
+          <div class="figure-placeholder-text">3Dフィギュアは<br>これから作られます</div>
+        </div>
+      </div>
+    `;
+  }
+
+  panel.innerHTML = `
+    ${figureSection}
+    <div class="detail-content">
+      <div class="character-detail">
+        <p class="age serif">${c.age}</p>
+        <p class="name serif">${c.name}</p>
+        <p class="reading">${c.reading}</p>
+        <span class="role-tag">${c.role}</span>
+        <div class="detail-section">
+          <p class="detail-label">居場所</p>
+          <p class="detail-text">${c.place}</p>
+        </div>
+        <div class="detail-section">
+          <p class="detail-label">この人について</p>
+          <p class="detail-text">${c.summary}</p>
+        </div>
+        <div class="detail-section">
+          <p class="detail-label">主な関係</p>
+          <ul class="detail-list">${relList}</ul>
+        </div>
+        <button class="close-btn" onclick="clearSelection()">閉じる</button>
+      </div>
+    </div>
+  `;
+}
+
+function clearSelection() {
+  selectedId = null;
+  Object.keys(markers).forEach(k => {
+    const el = markers[k].getElement();
+    if (el) el.classList.remove('selected');
+  });
+  relationLines.forEach(line => {
+    line.setStyle({
+      color: line.relData.special ? '#b06848' : '#666',
+      opacity: 0.35,
+      weight: line.relData.special ? 1.8 : 1.0,
+      dashArray: '4 6'
+    });
+  });
+  document.getElementById('panel').innerHTML = `
+    <div class="panel-default">
+      <p class="panel-default-icon serif">縁</p>
+      <p class="panel-default-text">地図上の人物アイコンをクリックしてください。<br><br>朱色のリングがついた人は、<br>3Dフィギュアが表示されます。</p>
+    </div>
+  `;
+}
+
+map.on('click', () => {
+  if (selectedId) clearSelection();
+});
+</script>
+
+</body>
+</html>
